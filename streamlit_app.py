@@ -5,7 +5,7 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Final Chart Fix + Debug")
+st.title("AI Trading: Final Deployment-Ready Version")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 
@@ -62,8 +62,8 @@ if st.button("Run Analysis"):
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
 
-                # Ensure flat string column names
-                df.columns = [str(col) for col in df.columns]
+                # ✅ True MultiIndex flattening
+                df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
                 st.write("📊 Final columns before plotting:")
                 st.write(df.columns.tolist())
