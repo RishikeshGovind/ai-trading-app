@@ -7,24 +7,36 @@ import pandas as pd
 def train_models(df):
     df = df.copy()
 
-    # Add target again for completeness (should already exist)
-    future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
-    df['target'] = (future_return > 0.005).astype(int)
+    # Add target if not already in df
+    if 'target' not in df.columns:
+        future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
+        df['target'] = (future_return > 0.005).astype(int)
 
     df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
     df.dropna(inplace=True)
 
+    # Drop Close and target to get features
     X = df.drop(['Close', 'target'], axis=1)
     y = df['target']
 
-    # DEBUG
-    print("X shape before align:", X.shape)
-    print("y shape before align:", y.shape)
-    print("NaNs in X:", X.isna().sum().sum())
-    print("NaNs in y:", y.isna().sum())
+    # DEBUG OUTPUT
+    print("🧪 X shape before align:", X.shape)
+    print("🧪 y shape before align:", y.shape)
+    print("🧪 NaNs in X:", X.isna().sum().sum())
+    print("🧪 NaNs in y:", y.isna().sum())
+    print("🧪 First few rows of X:")
+    print(X.head())
+    print("🧪 First few rows of y:")
+    print(y.head())
 
-    # Align features and labels to avoid length mismatch
+    # Align features and labels
     X, y = X.align(y, join='inner', axis=0)
+
+    # Detect and warn about empty columns
+    empty_cols = X.columns[X.isna().all()].tolist()
+    if empty_cols:
+        print("⚠️ These columns are entirely NaN and will be dropped:", empty_cols)
+        X.drop(columns=empty_cols, inplace=True)
 
     if len(X) < 50:
         raise ValueError(f"Not enough samples to train. Final shape: X={X.shape}, y={y.shape}")
