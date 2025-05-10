@@ -5,7 +5,7 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Interactive Threshold + Strategy Diagnostics")
+st.title("AI Trading: Diagnostics Mode (Returns, Strategy, Signal, Close)")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 
@@ -67,15 +67,21 @@ if st.button("Run Analysis"):
                 # ✅ True MultiIndex flattening
                 df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
-                st.write("📊 Final columns before plotting:")
+                # 🧪 DIAGNOSTICS
+                st.write("📊 Final columns:")
                 st.write(df.columns.tolist())
 
-                # Diagnostics
-                st.write("📊 Signal value counts:")
+                st.write("📉 First few Close prices:")
+                st.write(df['Close'].head(10))
+
+                st.write("🟢 Signal distribution:")
                 st.write(df['signal'].value_counts())
 
-                st.write("📊 Strategy return statistics:")
-                st.write(df[['returns', 'strategy']].describe())
+                st.write("📈 Min/max returns:")
+                st.write(f"{df['returns'].min()} to {df['returns'].max()}")
+
+                st.write("🧾 Strategy & returns (tail):")
+                st.dataframe(df[['returns', 'strategy', 'Close']].tail(10))
 
                 if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
                     st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
