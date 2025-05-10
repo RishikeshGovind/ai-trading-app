@@ -5,7 +5,7 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Debug Close + Returns")
+st.title("AI Trading: Final Close Debug Fix")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 threshold = st.slider("📈 Confidence threshold for signal", 0.3, 0.9, 0.6, 0.01)
@@ -14,9 +14,17 @@ if st.button("Run Analysis"):
     with st.spinner("📥 Downloading data..."):
         df = download_data(ticker)
 
-    if df is None or df.empty or 'Close' not in df.columns:
-        st.error("❌ Failed to download data or 'Close' column is missing.")
+    if df is None or df.empty:
+        st.error("❌ Failed to download data.")
     else:
+        # Flatten MultiIndex columns early
+        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+
+        if 'Close' not in df.columns:
+            st.error("❌ 'Close' column not found after flattening.")
+            st.write("Available columns:", df.columns.tolist())
+            st.stop()
+
         st.write(f"✅ Rows after download: {len(df)}")
         st.dataframe(df.tail())
 
@@ -38,13 +46,13 @@ if st.button("Run Analysis"):
         df.dropna(inplace=True)
         st.write(f"✅ Final usable rows before training: {len(df)}")
 
-        if len(df) < 50:
-            st.error("⚠️ Not enough data to train. Try a different ticker or longer time frame.")
-            st.stop()
-
-        # Check Close dtype and unique values
+        # Debug Close values
         st.write("🧪 Close dtype:", df['Close'].dtype)
         st.write("🧪 Unique Close values (first 10):", df['Close'].unique()[:10])
+
+        if len(df) < 50:
+            st.error("⚠️ Not enough data to train.")
+            st.stop()
 
         with st.spinner("🤖 Training model..."):
             try:
@@ -63,9 +71,6 @@ if st.button("Run Analysis"):
 
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
-
-                # Flatten columns
-                df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
                 st.write("📉 Signal distribution:")
                 st.write(df['signal'].value_counts())
