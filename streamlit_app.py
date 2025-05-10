@@ -28,10 +28,15 @@ if st.button("Run Analysis"):
                 st.error(f"❌ Feature engineering failed: {e}")
                 st.stop()
 
-        # ✅ Add target column before model training
+        # ✅ Add target column AFTER indicators
         future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
         df['target'] = (future_return > 0.005).astype(int)
+
+        # ✅ Final cleanup after all features + target added
+        df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
         df.dropna(inplace=True)
+
+        st.write(f"📦 Final usable rows: {len(df)}")
 
         with st.spinner("Training model..."):
             try:
