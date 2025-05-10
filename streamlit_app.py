@@ -1,7 +1,7 @@
 import streamlit as st
 from data_loader import download_data
 from feature_engineering import add_technical_indicators
-from model_training_debug import train_models  # using debug version
+from model_training import train_models  
 import matplotlib.pyplot as plt
 import pandas as pd
 
