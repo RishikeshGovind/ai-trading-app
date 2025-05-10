@@ -5,7 +5,7 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Stable + Debug-Friendly Streamlit App")
+st.title("AI Trading: Final Chart Fix + Debug")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 
@@ -48,7 +48,7 @@ if st.button("Run Analysis"):
             try:
                 model, scores = train_models(df)
                 st.write("📊 Model Accuracy Scores")
-                st.write(scores)
+                st.write({k: round(v, 3) for k, v in scores.items()})
 
                 features = df.drop(['Close', 'target'], axis=1)
                 proba = model.predict_proba(features)[:, 1]
@@ -62,13 +62,16 @@ if st.button("Run Analysis"):
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
 
-                st.write("📊 Available columns before plotting:")
+                # Ensure flat string column names
+                df.columns = [str(col) for col in df.columns]
+
+                st.write("📊 Final columns before plotting:")
                 st.write(df.columns.tolist())
 
                 if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
                     st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
                 else:
-                    st.warning("⚠️ Strategy columns not found in DataFrame.")
+                    st.warning("⚠️ Missing strategy columns.")
 
                 st.success("✅ Model training and backtest complete!")
             except ValueError as ve:
