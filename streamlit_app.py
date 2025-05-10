@@ -28,6 +28,11 @@ if st.button("Run Analysis"):
                 st.error(f"❌ Feature engineering failed: {e}")
                 st.stop()
 
+        # ✅ Add target column before model training
+        future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
+        df['target'] = (future_return > 0.005).astype(int)
+        df.dropna(inplace=True)
+
         with st.spinner("Training model..."):
             try:
                 model, scores = train_models(df)
