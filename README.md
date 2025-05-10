@@ -71,4 +71,39 @@ pip install -r requirements.txt
 
 ## 📜 License
 
-MIT License
+MIT License---
+
+## 🤖 How the Strategy Works
+
+This strategy uses **machine learning** to decide when to buy an asset — based purely on patterns in past data.
+
+### 🔍 Step-by-Step:
+
+1. **Feature Engineering**
+   - We create technical indicators like RSI, EMA, momentum, volatility, etc.
+   - These give the model clues about market behavior.
+
+2. **Target Definition**
+   - The model learns to predict: _“Will the price rise > 0.5% in the next 3 bars?”_
+   - We label past data accordingly: `1` for a rise, `0` otherwise.
+
+3. **Training ML Models**
+   - We use a mix of models: Random Forest, Gradient Boosting, and XGBoost.
+   - The top 3 performers are combined into a VotingClassifier ensemble (like a team of advisors).
+
+4. **Generating Buy Signals**
+   - When the model is confident (e.g., 60%+), it issues a **buy signal**.
+   - You can adjust the confidence threshold to be more/less aggressive.
+
+5. **Backtesting**
+   - We simulate how this strategy would have performed historically.
+   - It’s compared with simply holding the asset, showing both on a cumulative return graph.
+
+### 📈 Why Use This?
+- Avoids buying during uncertain times
+- Can reduce drawdowns (loss periods)
+- Adapts to new patterns over time via retraining
+
+The result: a **data-driven, rule-based strategy** that reacts to real market signals — not gut feelings.
+
+---
