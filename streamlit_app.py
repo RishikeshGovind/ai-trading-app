@@ -5,10 +5,9 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Diagnostics Mode (Returns, Strategy, Signal, Close)")
+st.title("AI Trading: Debug Close + Returns")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
-
 threshold = st.slider("📈 Confidence threshold for signal", 0.3, 0.9, 0.6, 0.01)
 
 if st.button("Run Analysis"):
@@ -36,15 +35,16 @@ if st.button("Run Analysis"):
 
         # Cleanup
         df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
-        st.write("🧪 NaNs per column before dropna():")
-        st.write(df.isna().sum())
-
         df.dropna(inplace=True)
         st.write(f"✅ Final usable rows before training: {len(df)}")
 
         if len(df) < 50:
             st.error("⚠️ Not enough data to train. Try a different ticker or longer time frame.")
             st.stop()
+
+        # Check Close dtype and unique values
+        st.write("🧪 Close dtype:", df['Close'].dtype)
+        st.write("🧪 Unique Close values (first 10):", df['Close'].unique()[:10])
 
         with st.spinner("🤖 Training model..."):
             try:
@@ -64,23 +64,12 @@ if st.button("Run Analysis"):
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
 
-                # ✅ True MultiIndex flattening
+                # Flatten columns
                 df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
-                # 🧪 DIAGNOSTICS
-                st.write("📊 Final columns:")
-                st.write(df.columns.tolist())
-
-                st.write("📉 First few Close prices:")
-                st.write(df['Close'].head(10))
-
-                st.write("🟢 Signal distribution:")
+                st.write("📉 Signal distribution:")
                 st.write(df['signal'].value_counts())
-
-                st.write("📈 Min/max returns:")
-                st.write(f"{df['returns'].min()} to {df['returns'].max()}")
-
-                st.write("🧾 Strategy & returns (tail):")
+                st.write("📈 Min/max returns:", df['returns'].min(), "to", df['returns'].max())
                 st.dataframe(df[['returns', 'strategy', 'Close']].tail(10))
 
                 if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
