@@ -7,18 +7,27 @@ import pandas as pd
 def train_models(df):
     df = df.copy()
 
+    # Add target again for completeness (should already exist)
     future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
     df['target'] = (future_return > 0.005).astype(int)
 
-    print("Before dropna():", df.shape)
+    df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
     df.dropna(inplace=True)
-    print("After dropna():", df.shape)
 
     X = df.drop(['Close', 'target'], axis=1)
     y = df['target']
 
+    # DEBUG
+    print("X shape before align:", X.shape)
+    print("y shape before align:", y.shape)
+    print("NaNs in X:", X.isna().sum().sum())
+    print("NaNs in y:", y.isna().sum())
+
+    # Align features and labels to avoid length mismatch
+    X, y = X.align(y, join='inner', axis=0)
+
     if len(X) < 50:
-        raise ValueError(f"Not enough data to train the model. Samples available: {len(X)}")
+        raise ValueError(f"Not enough samples to train. Final shape: X={X.shape}, y={y.shape}")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
