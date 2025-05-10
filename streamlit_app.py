@@ -5,7 +5,7 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Final Stable Model + Backtest")
+st.title("AI Trading: Debug Mode + Final Fixes")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 
@@ -28,15 +28,22 @@ if st.button("Run Analysis"):
                 st.error(f"❌ Feature engineering failed: {e}")
                 st.stop()
 
-        # ✅ Add target column AFTER indicators
+        # Add target column after indicators
         future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
         df['target'] = (future_return > 0.005).astype(int)
 
-        # ✅ Final cleanup after all features + target added
+        # DEBUG: show where the NaNs are coming from
+        st.write("🧪 NaNs per column before dropna():")
+        st.write(df.isna().sum())
+
         df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
         df.dropna(inplace=True)
 
         st.write(f"📦 Final usable rows: {len(df)}")
+
+        if len(df) < 50:
+            st.error("⚠️ Not enough data to train the model. Samples available: 0")
+            st.stop()
 
         with st.spinner("Training model..."):
             try:
