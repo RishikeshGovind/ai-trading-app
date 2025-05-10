@@ -5,34 +5,42 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Final Close Debug Fix")
+st.title("📈 AI-Powered Stock Strategy Evaluator")
 
-ticker = st.text_input("Enter Ticker:", "BTC-USD")
-threshold = st.slider("📈 Confidence threshold for signal", 0.3, 0.9, 0.6, 0.01)
+st.markdown("""
+This app helps you evaluate a simple AI-based trading strategy compared to the market.
 
-if st.button("Run Analysis"):
-    with st.spinner("📥 Downloading data..."):
+It uses machine learning to decide **when to buy or stay out** of a stock or crypto.  
+We'll show you:
+- The historical price trend
+- The model's trading signals
+- How well the strategy performs vs simply holding
+- Key performance metrics anyone can understand
+""")
+
+ticker = st.text_input("Enter a stock or crypto symbol (e.g., BTC-USD, AAPL):", "BTC-USD")
+threshold = st.slider("🎯 Prediction confidence threshold (higher = fewer trades)", 0.3, 0.9, 0.6, 0.01)
+
+if st.button("🔍 Analyze"):
+    with st.spinner("⏳ Downloading price data..."):
         df = download_data(ticker)
 
     if df is None or df.empty:
-        st.error("❌ Failed to download data.")
+        st.error("❌ Could not download data.")
     else:
-        # Flatten MultiIndex columns early
         df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
 
         if 'Close' not in df.columns:
-            st.error("❌ 'Close' column not found after flattening.")
-            st.write("Available columns:", df.columns.tolist())
+            st.error("❌ 'Close' column not found.")
+            st.write("Columns:", df.columns.tolist())
             st.stop()
 
-        st.write(f"✅ Rows after download: {len(df)}")
-        st.dataframe(df.tail())
+        st.subheader("📉 Recent Price History")
+        st.line_chart(df['Close'])
 
-        with st.spinner("⚙️ Engineering features..."):
+        with st.spinner("⚙️ Engineering technical features..."):
             try:
                 df = add_technical_indicators(df)
-                st.write(f"✅ Rows after feature engineering: {len(df)}")
-                st.dataframe(df.tail())
             except Exception as e:
                 st.error(f"❌ Feature engineering failed: {e}")
                 st.stop()
@@ -41,24 +49,16 @@ if st.button("Run Analysis"):
         future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
         df['target'] = (future_return > 0.005).astype(int)
 
-        # Cleanup
         df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
         df.dropna(inplace=True)
-        st.write(f"✅ Final usable rows before training: {len(df)}")
-
-        # Debug Close values
-        st.write("🧪 Close dtype:", df['Close'].dtype)
-        st.write("🧪 Unique Close values (first 10):", df['Close'].unique()[:10])
 
         if len(df) < 50:
-            st.error("⚠️ Not enough data to train.")
+            st.error("⚠️ Not enough data to evaluate.")
             st.stop()
 
-        with st.spinner("🤖 Training model..."):
+        with st.spinner("🧠 Training AI model..."):
             try:
                 model, scores = train_models(df)
-                st.write("📊 Model Accuracy Scores")
-                st.write({k: round(v, 3) for k, v in scores.items()})
 
                 features = df.drop(['Close', 'target'], axis=1)
                 proba = model.predict_proba(features)[:, 1]
@@ -68,22 +68,46 @@ if st.button("Run Analysis"):
                 df['returns'] = df['Close'].pct_change()
                 df['strategy'] = df['returns'] * df['signal'].shift(1)
                 df[['returns', 'strategy']] = df[['returns', 'strategy']].fillna(0)
-
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
 
-                st.write("📉 Signal distribution:")
-                st.write(df['signal'].value_counts())
-                st.write("📈 Min/max returns:", df['returns'].min(), "to", df['returns'].max())
-                st.dataframe(df[['returns', 'strategy', 'Close']].tail(10))
+                st.subheader("📊 Strategy vs Market Performance")
+                st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
 
-                if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
-                    st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
-                else:
-                    st.warning("⚠️ Missing strategy columns.")
+                # Compute metrics
+                strategy = df['strategy'].dropna()
+                market = df['returns'].dropna()
+                def safe_sharpe(r): return (r.mean() / r.std()) * (252**0.5) if r.std() > 0 else 0
 
-                st.success("✅ Model training and backtest complete!")
-            except ValueError as ve:
-                st.error(f"⚠️ {ve}")
+                metrics = pd.DataFrame({
+                    'Metric': ['Total Return', 'Volatility', 'Sharpe Ratio', 'Win Rate'],
+                    'Strategy': [
+                        f"{(1 + strategy).prod() - 1:.2%}",
+                        f"{strategy.std() * (252 ** 0.5):.2%}",
+                        f"{safe_sharpe(strategy):.2f}",
+                        f"{(strategy > 0).mean():.2%}"
+                    ],
+                    'Market': [
+                        f"{(1 + market).prod() - 1:.2%}",
+                        f"{market.std() * (252 ** 0.5):.2%}",
+                        f"{safe_sharpe(market):.2f}",
+                        f"{(market > 0).mean():.2%}"
+                    ]
+                })
+
+                st.subheader("📋 Key Performance Metrics")
+                st.dataframe(metrics)
+
+                st.markdown("""
+#### 📘 How to Read This:
+
+- **Total Return**: how much you'd gain/loss from strategy vs just holding
+- **Volatility**: how bumpy the returns are (lower = smoother)
+- **Sharpe Ratio**: return vs risk (higher = better)
+- **Win Rate**: how often the strategy made a profit on trades
+
+Adjust the slider above to control how confident the model must be before triggering a trade.
+""")
+                st.success("✅ Done! Explore the results above.")
             except Exception as e:
-                st.error(f"❌ Model training failed: {e}")
+                st.error(f"❌ Model training or evaluation failed: {e}")
