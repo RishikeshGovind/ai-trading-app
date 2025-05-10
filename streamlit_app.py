@@ -1,11 +1,11 @@
 import streamlit as st
 from data_loader import download_data
 from feature_engineering import add_technical_indicators
-from model_training import train_models  
+from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Full Debug Streamlit App")
+st.title("AI Trading: Stable + Debug-Friendly Streamlit App")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
 
@@ -28,20 +28,21 @@ if st.button("Run Analysis"):
                 st.error(f"❌ Feature engineering failed: {e}")
                 st.stop()
 
-        # Add target after indicators
+        # Add target
         future_return = (df['Close'].shift(-3) - df['Close']) / df['Close']
         df['target'] = (future_return > 0.005).astype(int)
 
-        # Replace infinities and drop missing values
+        # Cleanup
         df.replace([float('inf'), float('-inf')], pd.NA, inplace=True)
-
         st.write("🧪 NaNs per column before dropna():")
         st.write(df.isna().sum())
 
         df.dropna(inplace=True)
-
         st.write(f"✅ Final usable rows before training: {len(df)}")
-        st.dataframe(df.head())
+
+        if len(df) < 50:
+            st.error("⚠️ Not enough data to train. Try a different ticker or longer time frame.")
+            st.stop()
 
         with st.spinner("🤖 Training model..."):
             try:
@@ -61,7 +62,14 @@ if st.button("Run Analysis"):
                 df['cumulative_returns'] = (1 + df['returns']).cumprod()
                 df['cumulative_strategy'] = (1 + df['strategy']).cumprod()
 
-                st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
+                st.write("📊 Available columns before plotting:")
+                st.write(df.columns.tolist())
+
+                if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
+                    st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
+                else:
+                    st.warning("⚠️ Strategy columns not found in DataFrame.")
+
                 st.success("✅ Model training and backtest complete!")
             except ValueError as ve:
                 st.error(f"⚠️ {ve}")
