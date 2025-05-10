@@ -5,9 +5,11 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("AI Trading: Final Deployment-Ready Version")
+st.title("AI Trading: Interactive Threshold + Strategy Diagnostics")
 
 ticker = st.text_input("Enter Ticker:", "BTC-USD")
+
+threshold = st.slider("📈 Confidence threshold for signal", 0.3, 0.9, 0.6, 0.01)
 
 if st.button("Run Analysis"):
     with st.spinner("📥 Downloading data..."):
@@ -52,7 +54,7 @@ if st.button("Run Analysis"):
 
                 features = df.drop(['Close', 'target'], axis=1)
                 proba = model.predict_proba(features)[:, 1]
-                df['signal'] = (proba > 0.6).astype(int)
+                df['signal'] = (proba > threshold).astype(int)
                 df['confidence'] = proba
 
                 df['returns'] = df['Close'].pct_change()
@@ -67,6 +69,13 @@ if st.button("Run Analysis"):
 
                 st.write("📊 Final columns before plotting:")
                 st.write(df.columns.tolist())
+
+                # Diagnostics
+                st.write("📊 Signal value counts:")
+                st.write(df['signal'].value_counts())
+
+                st.write("📊 Strategy return statistics:")
+                st.write(df[['returns', 'strategy']].describe())
 
                 if 'cumulative_returns' in df.columns and 'cumulative_strategy' in df.columns:
                     st.line_chart(df[['cumulative_returns', 'cumulative_strategy']])
