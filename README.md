@@ -69,6 +69,14 @@ pip install -r requirements.txt
 
 ---
 
+## 🖥️ Live Demo
+
+> Heres a short live demo of this page.
+
+![Demo of the app](docs/app-demo.gif)
+
+---
+
 ## 📜 License
 
 MIT License---
