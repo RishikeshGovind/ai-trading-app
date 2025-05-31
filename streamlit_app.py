@@ -7,6 +7,11 @@ import pandas as pd
 
 st.title("📈 AI-Powered Stock Strategy Evaluator")
 
+st.set_page_config(
+    page_title="AI Trading App",
+    layout="wide"
+)
+
 st.markdown("""
 This app helps you evaluate a simple AI-based trading strategy compared to the market.
 
