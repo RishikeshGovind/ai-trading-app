@@ -5,10 +5,10 @@ from model_training import train_models
 import matplotlib.pyplot as plt
 import pandas as pd
 
-st.title("📈 AI-Powered Stock Strategy Evaluator")
+
 
 st.set_page_config(
-    page_title="AI Trading App",
+    page_title="📈 AI-Powered Stock Strategy Evaluator",
     layout="wide"
 )
 
